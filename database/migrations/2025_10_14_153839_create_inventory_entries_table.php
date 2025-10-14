@@ -7,13 +7,13 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $t) {
+        Schema::create('inventory_entries', function (Blueprint $t) {
             $t->id();
-            $t->string('sku')->unique();
-            $t->string('name');
-            $t->text('description')->nullable();
-            $t->decimal('price', 10, 2)->default(0);
-            $t->integer('stock')->default(0);
+            $t->foreignId('product_id')->constrained('products')->cascadeOnDelete();
+            $t->enum('type', ['IN', 'OUT']);
+            $t->integer('quantity');
+            $t->string('reason')->nullable();
+            $t->text('note')->nullable();
 
             // Auditoría
             $t->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -26,11 +26,11 @@ return new class extends Migration {
             $t->softDeletes();
             $t->timestamps();
 
-            $t->index(['name']);
+            $t->index(['product_id', 'type']);
         });
     }
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('inventory_entries');
     }
 };
