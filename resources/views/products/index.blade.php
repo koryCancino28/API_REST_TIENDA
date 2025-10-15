@@ -1,15 +1,22 @@
 @extends('layouts.app')
 @section('title','Productos')
 
+@section('head')
+<link rel="stylesheet" href="{{ asset('assets/css/products.css') }}">
+@endsection
+
 @section('content')
-<h2>Productos</h2>
+<div class="actions">
+    <h2 class="page-title">Productos</h2>
+    <div class="actions-right">
+        <a href="{{ route('web.dashboard') }}" class="btn btn-ghost" id="btnBack">Volver</a>
+        {{-- AHORA ES BOTÓN, NO LINK: ABRE MODAL DE REGISTRO --}}
+        <button class="btn btn-primary" id="btnNew" type="button">Nuevo</button>
+    </div>
+</div>
 
-<form id="searchForm" class="grid" style="grid-template-columns:1fr auto; gap: .5rem">
-    <input type="search" id="q" placeholder="Buscar por nombre o SKU">
-    <a href="{{ route('web.products.create') }}" role="button">Nuevo</a>
-</form>
-
-<table class="table" id="tbl">
+<table class="table products-table" id="tbl"
+    data-edit-base="{{ url('/products') }}" aria-describedby="Lista de productos">
     <thead>
         <tr>
             <th>ID</th>
@@ -17,56 +24,51 @@
             <th>Nombre</th>
             <th>Precio</th>
             <th>Stock</th>
-            <th></th>
+            <th class="col-actions" aria-label="Acciones"></th>
         </tr>
     </thead>
     <tbody></tbody>
 </table>
 
+{{-- Modal (reutilizable para CREAR y EDITAR) --}}
+<div id="productModal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="modalTitle">
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-card" role="document">
+        <div class="modal-header">
+            <h3 id="modalTitle">Registrar producto</h3>
+            <button class="modal-close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
+        </div>
+
+        <form id="modalForm" class="modal-body">
+            <div class="grid grid-2">
+                <label>SKU
+                    <input name="sku" required>
+                </label>
+                <label>Nombre
+                    <input name="name" required>
+                </label>
+            </div>
+            <label>Descripción
+                <textarea name="description" rows="3"></textarea>
+            </label>
+            <div class="grid grid-2">
+                <label>Precio
+                    <input name="price" type="number" step="0.01" min="0" required>
+                </label>
+                <label>Stock
+                    <input name="stock" type="number" min="0" value="0" required>
+                </label>
+            </div>
+        </form>
+
+        <div class="modal-footer">
+            <button class="btn btn-ghost" type="button" data-close-modal>Cancelar</button>
+            <button class="btn btn-primary" type="button" id="btnSaveModal">Guardar</button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
-<script>
-    (async function() {
-        const tbody = document.querySelector('#tbl tbody');
-        const load = async (search = '') => {
-            const data = await Api.request(`/products${search?`?search=${encodeURIComponent(search)}`:''}`);
-            tbody.innerHTML = '';
-            data.data.forEach(p => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-        <td>${p.id}</td>
-        <td>${p.sku}</td>
-        <td>${p.name}</td>
-        <td>${p.price.toFixed(2)}</td>
-        <td>${p.stock}</td>
-        <td>
-          <a href="{{ url('/products') }}/${p.id}/edit">Editar</a>
-          <button data-id="${p.id}" class="outline danger btn-del">Eliminar</button>
-        </td>`;
-                tbody.appendChild(tr);
-            });
-            bindDelete();
-        };
-
-        function bindDelete() {
-            document.querySelectorAll('.btn-del').forEach(btn => {
-                btn.onclick = async () => {
-                    if (!confirm('¿Eliminar producto?')) return;
-                    const id = btn.getAttribute('data-id');
-                    await Api.request(`/products/${id}`, {
-                        method: 'DELETE'
-                    });
-                    load(document.querySelector('#q').value);
-                };
-            });
-        }
-        document.querySelector('#searchForm').addEventListener('submit', e => {
-            e.preventDefault();
-            load(document.querySelector('#q').value);
-        });
-
-        await load();
-    })();
-</script>
+<script src="{{ asset('assets/js/products.index.js') }}"></script>
 @endsection

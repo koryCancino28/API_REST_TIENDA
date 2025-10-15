@@ -2,20 +2,37 @@
 @section('title','Iniciar sesión')
 
 @section('content')
-<article style="max-width:480px;margin:3rem auto">
-    <h2>Iniciar sesión</h2>
+<link rel="stylesheet" href="{{ asset('assets/css/login.css') }}">
+
+<div class="login-card">
+    <h2 class="login-title">Iniciar sesión</h2>
+
+    {{-- Pasar errores del servidor al JS externo sin mostrarlos aquí --}}
     @if($errors->any())
-    <div role="alert" class="contrast">@foreach($errors->all() as $e)<div>{{ $e }}</div>@endforeach</div>
+    <div id="login-errors" data-errors='@json($errors->all())' hidden></div>
     @endif
-    <form method="POST" action="{{ route('web.login.post') }}">
+
+    {{-- Mensaje opcional (por ejemplo después de logout) --}}
+    @if(session('status'))
+    <div id="login-status" data-status='@json(session("status"))' hidden></div>
+    @endif
+
+    <form id="loginForm" method="POST" action="{{ route('web.login.post') }}" class="login-form">
         @csrf
-        <label>Email
-            <input type="email" name="email" value="{{ old('email','admin@demo.com') }}" required>
+
+        <label class="form-label">Email
+            <input type="email" name="email" value="{{ old('email') }}" required class="form-input" autocomplete="username">
         </label>
-        <label>Contraseña
-            <input type="password" name="password" value="secret" required>
+
+        <label class="form-label">Contraseña
+            <input type="password" name="password" required class="form-input" autocomplete="current-password">
         </label>
-        <button type="submit">Entrar</button>
+
+        <button type="submit" class="btn-primary">Entrar</button>
     </form>
-</article>
+</div>
+
+{{-- Solo referencias a archivos, nada de JS embebido --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('assets/js/login.js') }}"></script>
 @endsection

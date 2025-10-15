@@ -21,25 +21,37 @@ class AuthSessionController extends Controller
         ]);
 
         if (!Auth::attempt($cred)) {
-            return back()->withErrors(['email' => 'Credenciales inválidas'])->withInput();
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Credenciales inválidas'], 401);
+            }
+            return back()->withErrors(['email' => 'Credenciales inválidas'])->onlyInput('email');
         }
 
-        // Crear token Sanctum y guardarlo en sesión para que JS lo use contra /api/v1
+        $request->session()->regenerate();
         $token = $request->user()->createToken('web')->plainTextToken;
         session(['api_token' => $token]);
 
         return redirect()->route('web.dashboard');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message'  => 'Bienvenido',
+                'redirect' => $redirect,
+            ]);
+        }
+        return redirect()->intended($redirect);
     }
 
     public function logout(Request $request)
     {
-        // Opcional: revoca solo el token actual (si existiera)
         $request->user()?->currentAccessToken()?->delete();
-        // Limpia sesión
         $request->session()->forget('api_token');
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('web.login');
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Sesión cerrada']);
+        }
+        return redirect()->route('web.login')->with('status', 'Sesión cerrada');
     }
 }
