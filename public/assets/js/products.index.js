@@ -4,13 +4,20 @@
 
   const tbody = table.querySelector('tbody');
 
-  // Modal refs
-  const modal = document.getElementById('productModal');
-  const modalForm = document.getElementById('modalForm');
-  const btnSave = document.getElementById('btnSaveModal');
+  // Modales
+  const editModal   = document.getElementById('productModal');
+  const createModal = document.getElementById('productCreateModal');
 
-  let currentId = null; // id del producto que se edita
+  const formEdit   = document.getElementById('modalFormEdit');
+  const formCreate = document.getElementById('modalFormCreate');
 
+  const btnSaveEdit   = document.getElementById('btnSaveEdit');
+  const btnSaveCreate = document.getElementById('btnSaveCreate');
+  const btnNew        = document.getElementById('btnNew');
+
+  let currentId = null;
+
+  // ===== Listar =====
   async function load(){
     const data = await Api.request(`/products`);
     render(data.data || []);
@@ -46,7 +53,7 @@
       `;
       tbody.appendChild(tr);
     });
-    // Asegurar que los trazos del SVG hereden el color
+    // Asegurar color trazos SVG
     tbody.querySelectorAll('.icon-btn svg *').forEach(p => {
       p.style.stroke = 'currentColor';
       if (!p.getAttribute('stroke')) p.setAttribute('stroke','currentColor');
@@ -55,27 +62,26 @@
     bindRowActions();
   }
 
+  // ===== Acciones por fila =====
   function bindRowActions(){
-    // Editar -> abrir modal y cargar datos
+    // abrir EDITAR
     tbody.querySelectorAll('[data-edit]').forEach(btn=>{
       btn.onclick = async ()=>{
         currentId = btn.getAttribute('data-edit');
         try{
           const res = await Api.request(`/products/${currentId}`);
           const p = res.data;
-          modalForm.sku.value = p.sku || '';
-          modalForm.name.value = p.name || '';
-          modalForm.description.value = p.description || '';
-          modalForm.price.value = p.price ?? 0;
-          modalForm.stock.value = p.stock ?? 0;
-          openModal();
-        }catch(err){
-          alert(err.message);
-        }
+          formEdit.sku.value         = p.sku || '';
+          formEdit.name.value        = p.name || '';
+          formEdit.description.value = p.description || '';
+          formEdit.price.value       = p.price ?? 0;
+          formEdit.stock.value       = p.stock ?? 0;
+          openModal(editModal);
+        }catch(err){ alert(err.message); }
       };
     });
 
-    // Eliminar
+    // ELIMINAR
     tbody.querySelectorAll('[data-del]').forEach(btn=>{
       btn.onclick = async ()=>{
         const id = btn.getAttribute('data-del');
@@ -86,49 +92,86 @@
     });
   }
 
-  // Modal helpers
-  function openModal(){
-    modal.hidden = false;
-    modal.setAttribute('aria-hidden','false');
-    document.addEventListener('keydown', onEsc);
-    document.addEventListener('click', onBackdrop, true);
-  }
-  function closeModal(){
-    modal.hidden = true;
-    modal.setAttribute('aria-hidden','true');
-    document.removeEventListener('keydown', onEsc);
-    document.removeEventListener('click', onBackdrop, true);
-    currentId = null;
-  }
-  function onEsc(e){ if (e.key === 'Escape') closeModal(); }
-  function onBackdrop(e){
-    if (e.target?.hasAttribute('data-close-modal')) closeModal();
-  }
-  // Botones de cerrar
-  modal.querySelectorAll('[data-close-modal]').forEach(el=>{
-    el.addEventListener('click', closeModal);
+  // ===== Crear (abrir modal) =====
+  btnNew?.addEventListener('click', ()=>{
+    formCreate.reset();
+    // defaults
+    formCreate.price.value = '';
+    formCreate.stock.value = '0';
+    openModal(createModal);
   });
 
-  // Guardar cambios (PUT)
-  btnSave.addEventListener('click', async ()=>{
+  // ===== Guardar EDIT =====
+  btnSaveEdit.addEventListener('click', async ()=>{
     if (!currentId) return;
     const payload = {
-      sku: modalForm.sku.value,
-      name: modalForm.name.value,
-      description: modalForm.description.value,
-      price: parseFloat(modalForm.price.value || 0),
-      stock: parseInt(modalForm.stock.value || 0, 10),
+      sku:  formEdit.sku.value,
+      name: formEdit.name.value,
+      description: formEdit.description.value,
+      price: parseFloat(formEdit.price.value || 0),
+      stock: parseInt(formEdit.stock.value || 0, 10),
     };
     try{
       await Api.request(`/products/${currentId}`, {
         method: 'PUT',
         body: JSON.stringify(payload)
       });
-      closeModal();
+      closeModal(editModal);
       await load();
-    }catch(err){
-      alert(err.message);
+    }catch(err){ alert(err.message); }
+  });
+
+  // ===== Guardar CREATE =====
+  btnSaveCreate.addEventListener('click', async ()=>{
+    const payload = {
+      sku:  formCreate.sku.value,
+      name: formCreate.name.value,
+      description: formCreate.description.value,
+      price: parseFloat(formCreate.price.value || 0),
+      stock: parseInt(formCreate.stock.value || 0, 10),
+    };
+    try{
+      await Api.request(`/products`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      closeModal(createModal);
+      await load();
+    }catch(err){ alert(err.message); }
+  });
+
+  // ===== Modal helpers (genéricos) =====
+  function openModal(node){
+    node.hidden = false;
+    node.setAttribute('aria-hidden','false');
+    document.addEventListener('keydown', onEsc);
+    document.addEventListener('click', onBackdrop, true);
+  }
+  function closeModal(node){
+    node.hidden = true;
+    node.setAttribute('aria-hidden','true');
+    document.removeEventListener('keydown', onEsc);
+    document.removeEventListener('click', onBackdrop, true);
+    currentId = null;
+  }
+  function onEsc(e){
+    if (e.key === 'Escape'){
+      if (!editModal.hidden)   closeModal(editModal);
+      if (!createModal.hidden) closeModal(createModal);
     }
+  }
+  function onBackdrop(e){
+    if (e.target?.hasAttribute('data-close-modal')) {
+      if (!editModal.hidden)   closeModal(editModal);
+      if (!createModal.hidden) closeModal(createModal);
+    }
+  }
+  // botones de cerrar (X y Cancelar)
+  document.querySelectorAll('[data-close-modal]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      if (!editModal.hidden)   closeModal(editModal);
+      if (!createModal.hidden) closeModal(createModal);
+    });
   });
 
   // Botón Volver (historial)

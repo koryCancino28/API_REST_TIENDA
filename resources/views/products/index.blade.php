@@ -10,13 +10,11 @@
     <h2 class="page-title">Productos</h2>
     <div class="actions-right">
         <a href="{{ route('web.dashboard') }}" class="btn btn-ghost" id="btnBack">Volver</a>
-        {{-- AHORA ES BOTÓN, NO LINK: ABRE MODAL DE REGISTRO --}}
         <button class="btn btn-primary" id="btnNew" type="button">Nuevo</button>
     </div>
 </div>
 
-<table class="table products-table" id="tbl"
-    data-edit-base="{{ url('/products') }}" aria-describedby="Lista de productos">
+<table class="table products-table" id="tbl" aria-describedby="Lista de productos">
     <thead>
         <tr>
             <th>ID</th>
@@ -30,40 +28,56 @@
     <tbody></tbody>
 </table>
 
-{{-- Modal (reutilizable para CREAR y EDITAR) --}}
-<div id="productModal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="modalTitle">
+{{-- Modal EDITAR --}}
+<div id="productModal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="modalTitleEdit">
     <div class="modal-backdrop" data-close-modal></div>
     <div class="modal-card" role="document">
         <div class="modal-header">
-            <h3 id="modalTitle">Registrar producto</h3>
-            <button class="modal-close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
+            <h3 id="modalTitleEdit">Editar producto</h3>
         </div>
 
-        <form id="modalForm" class="modal-body">
+        <form id="modalFormEdit" class="modal-body">
             <div class="grid grid-2">
-                <label>SKU
-                    <input name="sku" required>
-                </label>
-                <label>Nombre
-                    <input name="name" required>
-                </label>
+                <label>SKU <input name="sku" required></label>
+                <label>Nombre <input name="name" required></label>
             </div>
-            <label>Descripción
-                <textarea name="description" rows="3"></textarea>
-            </label>
+            <label>Descripción <textarea name="description" rows="3"></textarea></label>
             <div class="grid grid-2">
-                <label>Precio
-                    <input name="price" type="number" step="0.01" min="0" required>
-                </label>
-                <label>Stock
-                    <input name="stock" type="number" min="0" value="0" required>
-                </label>
+                <label>Precio <input name="price" type="number" step="0.01" min="0" required></label>
+                <label>Stock <input name="stock" type="number" min="0" required></label>
             </div>
         </form>
 
         <div class="modal-footer">
             <button class="btn btn-ghost" type="button" data-close-modal>Cancelar</button>
-            <button class="btn btn-primary" type="button" id="btnSaveModal">Guardar</button>
+            <button class="btn btn-primary" type="button" id="btnSaveEdit">Guardar</button>
+        </div>
+    </div>
+</div>
+
+{{-- Modal CREAR --}}
+<div id="productCreateModal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="modalTitleCreate">
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-card" role="document">
+        <div class="modal-header">
+            <h3 id="modalTitleCreate">Nuevo producto</h3>
+        </div>
+
+        <form id="modalFormCreate" class="modal-body">
+            <div class="grid grid-2">
+                <label>SKU <input name="sku" required></label>
+                <label>Nombre <input name="name" required></label>
+            </div>
+            <label>Descripción <textarea name="description" rows="3"></textarea></label>
+            <div class="grid grid-2">
+                <label>Precio <input name="price" type="number" step="0.01" min="0" required></label>
+                <label>Stock <input name="stock" type="number" min="0" value="0" required></label>
+            </div>
+        </form>
+
+        <div class="modal-footer">
+            <button class="btn btn-ghost" type="button" data-close-modal>Cancelar</button>
+            <button class="btn btn-primary" type="button" id="btnSaveCreate">Guardar</button>
         </div>
     </div>
 </div>
