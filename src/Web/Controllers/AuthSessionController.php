@@ -1,57 +1,44 @@
 <?php
 
-namespace Src\Web\Controllers;
+namespace Src\Auth\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User; 
 
-class AuthSessionController extends Controller
+class AuthController extends Controller
 {
-    public function showLoginForm()
-    {
-        return view('auth.login');
-    }
-
     public function login(Request $request)
     {
-        $cred = $request->validate([
+        $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required|string'
         ]);
 
-        if (!Auth::attempt($cred)) {
-            if ($request->expectsJson()) {
-                return response()->json(['message' => 'Credenciales inválidas'], 401);
-            }
-            return back()->withErrors(['email' => 'Credenciales inválidas'])->onlyInput('email');
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+            return response()->json(['message' => 'Credenciales inválidas'], 401);
         }
 
-        $request->session()->regenerate();
-        $token = $request->user()->createToken('web')->plainTextToken;
-        session(['api_token' => $token]);
+        $token = $user->createToken('api')->plainTextToken;
 
-        return redirect()->route('web.dashboard');
+        return response()->json([
+            'token' => $token,
+            'user'  => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email]
+        ]);
+    }
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'message'  => 'Bienvenido',
-                'redirect' => $redirect,
-            ]);
-        }
-        return redirect()->intended($redirect);
+    public function me(Request $request)
+    {
+        return response()->json($request->user());
     }
 
     public function logout(Request $request)
     {
-        $request->user()?->currentAccessToken()?->delete();
-        $request->session()->forget('api_token');
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        if ($request->expectsJson()) {
-            return response()->json(['message' => 'Sesión cerrada']);
-        }
-        return redirect()->route('web.login')->with('status', 'Sesión cerrada');
+        $request->user()->currentAccessToken()?->delete();
+        return response()->json(['message' => 'Sesión cerrada']);
     }
 }
